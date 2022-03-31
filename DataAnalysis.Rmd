@@ -1,0 +1,68 @@
+---
+title: "Data Analysis"
+author: "phuongvo"
+date: "01/03/2021"
+output: html_document
+---
+```{r, message=FALSE}
+# Import library
+library(tseries)
+library(fBasics)
+library(ggplot2)
+library(FinTS)
+library(fGarch)
+```
+
+Import file and convert data type to TimeSeries.
+
+```{r, message=FALSE}
+SP500 <- read.csv(file.choose(), header = TRUE)
+SP500$date<-as.Date(SP500$date, format = "%d/%m/%Y") 
+ggplot(SP500, aes(x = date, y = close)) + geom_line(col="brown", lwd = 1) +ylab("SP500")
+returnsSP500 <- diff(log(SP500$close))
+SP500$returnsSP500 <-c(0,returnsSP500)
+```
+Descriptive Statistics
+```{r, message=FALSE}
+min(returnsSP500)
+max(returnsSP500)
+mean(returnsSP500)
+sd(returnsSP500)
+summary(returnsSP500)
+summary(SP500$close)
+
+```
+```{r}
+# Stationary test
+adf.test(returnsSP500)
+
+
+test_out <- ArchTest(returnsSP500, lags = 1)
+test_out
+```
+
+Data visualization
+```{r}
+# Stock movement
+plot(returnsSP500,type ='l',main="SP500",ylab="returns")
+
+```
+```{r}
+#Garch(1,1)
+garch <- garchFit(formula = ~ garch(1,1), data = SP500$returns, trace = F, include.mean = F)
+summary(garch)
+vol <- garch@h.t
+vol <- ts(vol)
+
+```
+
+```{r}
+
+# Return's volatility via Garch(1,1)
+qplot(log(garch@sigma.t^2), geom = "density",
+      ylab = ('density'),
+      xlab = "",
+      size=I(1),
+      xlim=c(-20.5,20.5))
+```
+
